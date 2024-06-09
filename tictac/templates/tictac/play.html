@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tic-Tac-Toe</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: #f0f0f0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+
+        .container {
+            text-align: center;
+        }
+
+        h1 {
+            margin-bottom: 2rem;
+            color: #333;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(3, 100px);
+            grid-template-rows: repeat(3, 100px);
+            gap: 10px;
+            justify-content: center;
+        }
+
+        .cell {
+            width: 100px;
+            height: 100px;
+            background-color: #fff;
+            border: 2px solid #333;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 2rem;
+            font-weight: bold;
+            color: #333;
+            cursor: pointer;
+            transition: transform 0.3s;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .cell:hover {
+            transform: scale(1.05);
+        }
+
+        .cell:active {
+            transform: scale(1);
+        }
+
+        @media (max-width: 600px) {
+            .grid {
+                grid-template-columns: repeat(3, 70px);
+                grid-template-rows: repeat(3, 70px);
+            }
+
+            .cell {
+                width: 70px;
+                height: 70px;
+                font-size: 1.5rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Tic-Tac-Toe</h1>
+        <div class="grid">
+            <div class="cell" data-cell-index="0"></div>
+            <div class="cell" data-cell-index="1"></div>
+            <div class="cell" data-cell-index="2"></div>
+            <div class="cell" data-cell-index="3"></div>
+            <div class="cell" data-cell-index="4"></div>
+            <div class="cell" data-cell-index="5"></div>
+            <div class="cell" data-cell-index="6"></div>
+            <div class="cell" data-cell-index="7"></div>
+            <div class="cell" data-cell-index="8"></div>
+        </div>
+    </div>
+    <script src="https://unpkg.com/sweetalert/dist/sweetalert.min.js"></script>
+
+   <script>
+    var room_code = '{{room_code}}';
+    var username = '{{username}}';
+    var player = username.charAt(0);
+
+    // Ensure the WebSocket URL has a trailing slash if needed
+    let socket = new WebSocket('ws://localhost:8000/ws/game/' + room_code + '/');
+
+    let gameState = ["", "", "", "", "", "", "", "", ""];
+
+    let elementArray = document.querySelectorAll('.space');
+
+    elementArray.forEach(function(elem) {
+        elem.addEventListener("click", function(event) {
+            setText(event.target.getAttribute('data-cell-index'), player);
+        });
+    });
+
+    function checkGameEnd() {
+        var count = 0;
+        gameState.map((game) => {
+            if (game != "") {
+                count++;
+            }
+        });
+
+        if (count >= 9) {
+            var data = {'type': 'over'};
+            socket.send(JSON.stringify({data}));
+            swal("Game over!", "Game end no one won", "warning");
+        }
+    }
+
+    function checkWon(value, player) {
+        var won = false;
+
+        if (gameState[0] === value && gameState[1] == value && gameState[2] == value) {
+            won = true;
+        } else if (gameState[3] === value && gameState[4] == value && gameState[5] == value) {
+            won = true;
+        } else if (gameState[6] === value && gameState[7] == value && gameState[8] == value) {
+            won = true;
+        } else if (gameState[0] === value && gameState[3] == value && gameState[6] == value) {
+            won = true;
+        } else if (gameState[1] === value && gameState[4] == value && gameState[7] == value) {
+            won = true;
+        } else if (gameState[2] === value && gameState[5] == value && gameState[8] == value) {
+            won = true;
+        } else if (gameState[0] === value && gameState[4] == value && gameState[8] == value) {
+            won = true;
+        } else if (gameState[2] === value && gameState[4] == value && gameState[6] == value) {
+            won = true;
+        }
+
+        if (won) {
+            var data = {'type': 'end', 'player': player};
+            socket.send(JSON.stringify({data}));
+            swal("Good job!", "You won", "success");
+        }
+
+        checkGameEnd();
+    }
+
+    function setText(index, value) {
+        var data = {
+            'player': player,
+            'index': index,
+            'type': 'running'
+        };
+
+        if (gameState[parseInt(index)] == "") {
+            gameState[parseInt(index)] = value;
+            elementArray[parseInt(index)].innerHTML = value;
+
+            socket.send(JSON.stringify({
+                data
+            }));
+            checkWon(value, player);
+        } else {
+            alert("You cannot fill this space");
+        }
+    }
+
+    function setAnotherUserText(index, value) {
+        gameState[parseInt(index)] = value;
+        elementArray[parseInt(index)].innerHTML = value;
+    }
+
+    socket.onopen = function(e) {
+        console.log('Socket connected');
+    };
+
+    socket.onmessage = function(e) {
+        var data = JSON.parse(e.data);
+        console.log(data);
+        if (data.payload.type == 'end' && data.payload.player !== player) {
+            swal("Sorry!", "You lost", "error");
+        } else if (data.payload.type == 'over') {
+            swal("Game over!", "Game end no one won", "warning");
+            return;
+        } else if (data.payload.type == 'running' && data.payload.player !== player) {
+            setAnotherUserText(data.payload.index, data.payload.player);
+        }
+    };
+
+    socket.onclose = function(e) {
+        console.log('Socket closed');
+    };
+</script>
+</body>
+</html>

@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tic-Tac-Toe Game</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f9f9f9;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+
+        .container {
+            background-color: #fff;
+            padding: 2rem;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            width: 300px;
+            text-align: center;
+        }
+
+        h1 {
+            margin-bottom: 1.5rem;
+            color: #333;
+        }
+
+        .form-group {
+            margin-bottom: 1rem;
+            text-align: left;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 0.5rem;
+            color: #666;
+        }
+
+        input[type="text"], select {
+            width: 100%;
+            padding: 0.5rem;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            box-sizing: border-box;
+        }
+
+        button {
+            width: 100%;
+            padding: 0.75rem;
+            border: none;
+            border-radius: 5px;
+            background-color: #28a745;
+            color: white;
+            font-size: 1rem;
+            cursor: pointer;
+            margin-top: 1rem;
+        }
+
+        button:hover {
+            background-color: #218838;
+        }
+
+        #room-code {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Tic-Tac-Toe</h1>
+         {% if messages %}
+         {% for message in messages %}
+         <div >
+         {{ message }}
+         </div>
+         {% endfor %}
+         {% endif %}
+        <form id="tictactoe-form" method="post">
+       
+               {% csrf_token %}
+            <div class="form-group">
+                <label for="name">Name:</label>
+                <input type="text" id="name" name="name" required>
+            </div>
+            <div class="form-group">
+                <label for="room_action">Action:</label>
+                <select id="room_action" name="room_action" required>
+                    <option value="create_room">Create Room</option>
+                    <option value="have_room">Have Room</option>
+                </select>
+            </div>
+            <div class="form-group" id="room-code-group">
+                <label for="room_code">Room Code:</label>
+                <input type="text" id="room_code" name="room_code">
+            </div>
+            <button type="submit">Enjoy Game</button>
+        </form>
+    </div>
+
+    <script>
+        document.getElementById('room-action').addEventListener('change', function() {
+            const roomCodeField = document.getElementById('room-code-group');
+            if (this.value === 'create-room') {
+                roomCodeField.style.display = 'none';
+            } else {
+                roomCodeField.style.display = 'block';
+            }
+        });
+    </script>
+</body>
+</html>
